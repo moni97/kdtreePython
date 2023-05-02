@@ -1,23 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# <h1>Table of Contents<span class="tocSkip"></span></h1>
-# <div class="toc"><ul class="toc-item"></ul></div>
-
-# In[476]:
-
-
 import statistics
 import numpy as np
 import sys
 from graphviz import Digraph 
 
-
-# In[2]:
-
-
 class Node:
-    @classmethod
     def __init__(self, val, axis=0, count = 0, weight = None, minWeight=None, maxWeight=None):
         self.right = self.left = None
         self.val = val
@@ -32,7 +18,7 @@ class Node:
             }
 class KDTree: 
     @classmethod
-    def preorderTraversal(root):
+    def preorderTraversal(self, root):
         res, stack = [], [root]
         while stack:
             node = stack.pop()
@@ -46,7 +32,7 @@ class KDTree:
         return res
     
     @classmethod
-    def dfs(root):
+    def dfs(self, root):
         res, stack = {}, [root]
         while stack:
             for i in range(len(stack)):
@@ -77,22 +63,21 @@ class KDTree:
         return res
     
     @classmethod
-    def buildKdTree(points, hyperplaneAxis = 0, weights = None):
-        if weights == None:
+    def buildKdTree(self, points, weights = None):
+        if not weights:
             points = [[point] for point in points]
         else:
             if len(points) != len(weights):
                 print("Incompatible len of points and weights")
                 return
             points = [[point, weight] for point, weight in zip(points, weights)]
-        return buildTreeWithMedian(points, hyperplaneAxis)
+        return self.buildTreeWithMedian(points)
     
     @classmethod
-    def buildTreeWithMedian(points, hyperplaneAxis = 0):
+    def buildTreeWithMedian(self, points, hyperplaneAxis = 0):
         dim = len(points[0][0])
         nxtHyperplaneAxis = (hyperplaneAxis + 1) % dim
         if len(points) == 1:
-            print(points[0][0], "axis:", hyperplaneAxis)
             return Node(points[0][0], hyperplaneAxis, 1, points[0][1] if len(points[0]) > 1 else 0, points[0][1] if len(points[0]) > 1 else 0, points[0][1] if len(points[0]) > 1 else 0)
 
         medianIndex = len(points) // 2
@@ -106,12 +91,12 @@ class KDTree:
         if (len(points[0]) > 1):
             sortedWeights = sorted(points, key=lambda x: x[1])
         currNode = Node(median[0], hyperplaneAxis, len(points), median[1] if len(median) > 1 else 0, sortedWeights[0][1] if (len(points[0]) > 1) else 0, sortedWeights[-1][1] if (len(points[0]) > 1 and len(sortedWeights) > 1) else 0)
-        currNode.left = buildTreeWithMedian(leftPoints, nxtHyperplaneAxis) if len(leftPoints) > 0 else []
-        currNode.right = buildTreeWithMedian(rightPoints, nxtHyperplaneAxis) if len(rightPoints) > 0 else []
+        currNode.left = self.buildTreeWithMedian(leftPoints, nxtHyperplaneAxis) if len(leftPoints) > 0 else []
+        currNode.right = self.buildTreeWithMedian(rightPoints, nxtHyperplaneAxis) if len(rightPoints) > 0 else []
         return currNode
     
     @classmethod
-    def visualizeGraph(treeList):
+    def visualizeGraph(self, treeList):
         dot = Digraph(comment='Tree')
         for node in treeList:
             dot.node(node)
@@ -123,21 +108,21 @@ class KDTree:
         dot.render('tree', view=True)
 
     @classmethod
-    def checkRight(node : Node, bottom_left : list, top_right : list) -> bool:
+    def checkRight(self, node : Node, bottom_left : list, top_right : list) -> bool:
         if (node.val[0] > bottom_left[0]) and (node.val[0] < top_right[0]) and (node.val[1] > bottom_left[1]) and (node.val[1] < top_right[1]):
             return True
         else:
             return False
 
     @classmethod
-    def checkLeft(node : Node, top_left : list, bottom_right : list) -> bool:
+    def checkLeft(self, node : Node, top_left : list, bottom_right : list) -> bool:
         if (node.val[0] > bottom_right[0]) and (node.val[0] < top_left[0]) and (node.val[1] > top_left[1]) and (node.val[1] < bottom_right[1]):
             return True
         else:
             return False
     
     @classmethod
-    def isLeaf(node : Node) -> bool:
+    def isLeaf(self, node : Node) -> bool:
         if node==None:
             return False
         if node.left==None and node.right==None:
@@ -145,12 +130,12 @@ class KDTree:
         return False
 
     @classmethod
-    def ToNode(node : list) -> Node:
+    def ToNode(self, node : list) -> Node:
         N = Node(node)
         return N
 
     @classmethod
-    def CountQueryPoints(node : Node, p1 : list, p2 : list) ->int:
+    def CountQueryPoints(self, node : Node, p1 : list, p2 : list) ->int:
 
         NoOfPoints = 0
         if p1[0]==p2[0]:
@@ -197,7 +182,7 @@ class KDTree:
         return NoOfPoints
 
     @classmethod
-    def Max(root):
+    def Max(self, root):
         Max, stack = [], []
         cur = root
         while cur or stack:
@@ -211,7 +196,7 @@ class KDTree:
         return max(Max)
 
     @classmethod
-    def Min(root):
+    def Min(self, root):
         Max, stack = [], []
         cur = root
         while cur or stack:
@@ -225,22 +210,22 @@ class KDTree:
         return min(Max)
 
     @classmethod
-    def NNKDTree(queryPoint, root, threshold, noOfPoints):
+    def nnKDTree(self, queryPoint, root, threshold, noOfPoints):
         listOfNeighbors = []
-        return NNKDTreeRec(queryPoint, root, threshold, noOfPoints, listOfNeighbors)
+        return self.nnKDTreeRec(queryPoint, root, threshold, noOfPoints, listOfNeighbors)
 
     @classmethod
-    def squareDistance(p1, p2):
+    def squareDistance(self, p1, p2):
         retValue = abs((p1[0] - p2[0]) ^ 2 - (p1[1] - p2[1]) ^ 2)
         print("p1: ", p1, "p2: ", p2, "print val: ", retValue)
         return retValue
 
     @classmethod
-    def NNKDTreeRec(queryPoint, root, threshold, noOfPoints, listOfNeighbors):
+    def nnKDTreeRec(self, queryPoint, root, threshold, noOfPoints, listOfNeighbors):
         if not root:
             return listOfNeighbors
         else:
-            if squareDistance(root.val, queryPoint) < threshold and len(listOfNeighbors) < noOfPoints:
+            if self.squareDistance(root.val, queryPoint) < threshold and len(listOfNeighbors) < noOfPoints:
                 listOfNeighbors.append(root.val)
             if root.left == None and root.right == None:
                 return listOfNeighbors
@@ -255,10 +240,9 @@ class KDTree:
                 else:
                     T1 = root.right
                     T2 = root.left
-                leftList = NNKDTreeRec(queryPoint, T1, threshold, noOfPoints, listOfNeighbors)
-                if len(leftList) < noOfPoints and squareDistance(root.val, queryPoint) < threshold:
-                    rightList = NNKDTreeRec(queryPoint, root.right, threshold, noOfPoints, listOfNeighbors)
+                leftList = self.nnKDTreeRec(queryPoint, T1, threshold, noOfPoints, listOfNeighbors)
+                if len(leftList) < noOfPoints and self.squareDistance(root.val, queryPoint) < threshold:
+                    rightList = self.nnKDTreeRec(queryPoint, root.right, threshold, noOfPoints, listOfNeighbors)
                 else:
-                    rightList = NNKDTreeRec(queryPoint, root.right, threshold, noOfPoints, listOfNeighbors)
+                    rightList = self.nnKDTreeRec(queryPoint, root.right, threshold, noOfPoints, listOfNeighbors)
         return listOfNeighbors
-
