@@ -1,0 +1,15 @@
+# Delete the build directory
+build/
+
+# Delete any egg-info directories
+*.egg-info/
+
+# Delete code coverage related files
+htmlcov/
+.coverage
+
+# checkpoints
+*.ipynb_checkpoints/
+
+# cache
+__pycache__/

@@ -133,7 +133,7 @@ class KDTree:
             return True
         return False
 
-    @classmethod
+    @classmethod 
     def isLeaf(self,node):
         if node == None:
             return False
