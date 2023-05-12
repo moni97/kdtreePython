@@ -4,7 +4,7 @@ import sys
 from graphviz import Digraph 
 
 class Node:
-    def __init__(self, val, axis=0, count = 0, weight = None, minWeight=None, maxWeight=None):
+    def __init__(self, val, axis=0, count = 0, weight = None):
         self.right = self.left = None
         self.val = val
         self.axis = axis
@@ -12,11 +12,72 @@ class Node:
         self.weight = None
         if weight:
             self.weight = {
-                "weight": weight,
-                "minWeight": minWeight,
-                "maxWeight": maxWeight
+                "weight": weight["weight"],
+                "minWeight": weight["minWeight"],
+                "maxWeight": weight["maxWeight"]
             }
-class KDTree: 
+class KDTree:
+    def __init__(self, points, weights = None):
+        if len(points) == 0 or not self.isPointsInSameDimension(points):
+            raise ValueError("Problem in points: either it is empty or the dimensions")
+   
+        self.weights = None
+        if not weights or len(weights) == 0:
+            self.points = [[point] for point in points]
+        else:
+            if len(points) != len(weights):
+                raise ValueError("Dimensions of points and weights does not match")
+            self.points = [[point, weight] for point, weight in zip(points, weights)]
+            self.weights = weights
+        self.root = self.buildKdTree(self.points)
+    
+    @classmethod
+    def isPointsInSameDimension(self, points):
+        dimension = len(points[0])
+        for pt in points:
+            if len(pt) != dimension:
+                return False
+        return True
+    
+    @classmethod
+    def getNodeParameters(self, points, axis, noOfPoints = 1, weights = None):
+        weight = {"weight": None, "minWeight": None, "maxWeight": None}
+
+        if weights:
+            weight["weight"] = points[1]
+            weight["minWeight"] = weights[-1][1]
+            weight["maxWeight"] = weights[0][1]
+        elif len(points) > 1:
+            weight["weight"] = weight["minWeight"] = weight["maxWeight"] = points[1]
+        return [points[0], axis, noOfPoints, weight]
+        
+    @classmethod
+    def buildKdTree(self, points, hyperplaneAxis = 0):
+        dim = len(points[0][0])
+        nxtHyperplaneAxis = (hyperplaneAxis + 1) % dim
+        
+        if len(points) == 1:
+            parameters = self.getNodeParameters(points[0], hyperplaneAxis)
+            return Node(*parameters)
+
+        medianIndex = len(points) // 2
+        sortedPoints = sorted(points, key=lambda x: x[0][hyperplaneAxis])
+
+        median = sortedPoints[medianIndex]
+        leftPoints = sortedPoints[:medianIndex]
+        rightPoints = sortedPoints[medianIndex + 1:]
+        sortedWeights = None
+
+        if (len(points[0]) > 1):
+            sortedWeights = sorted(points, key=lambda x: x[1])
+        
+        parameters = self.getNodeParameters(median, hyperplaneAxis, len(points), sortedWeights)
+        currNode = Node(*parameters)
+        
+        currNode.left = self.buildKdTree(leftPoints, nxtHyperplaneAxis) if len(leftPoints) > 0 else []
+        currNode.right = self.buildKdTree(rightPoints, nxtHyperplaneAxis) if len(rightPoints) > 0 else []
+        return currNode
+    
     @classmethod
     def preorderTraversal(self, root):
         res, stack = [], [root]
@@ -61,51 +122,44 @@ class KDTree:
                                 child.weight["maxWeight"] if child.weight else 0
                             ]))
         return res
-    
+
     @classmethod
-    def buildKdTree(self, points, weights = None):
-        if not weights:
-            points = [[point] for point in points]
+    def nnKDTree(self, queryPoint, root, threshold, noOfPoints):
+        listOfNeighbors = []
+        return self.nnKDTreeRec(queryPoint, root, threshold, noOfPoints, listOfNeighbors)
+
+    @classmethod
+    def getDistacne(self, p1, p2, metric="eucledian"):
+        if metric == "eucledian":
+            retValue = (p1[0] - p2[0]) ^ 2 + (p1[1] - p2[1]) ^ 2
+        return retValue
+
+    @classmethod
+    def nnKDTreeRec(self, queryPoint, root, threshold, noOfPoints, listOfNeighbors):
+        if not root:
+            return listOfNeighbors
         else:
-            if len(points) != len(weights):
-                print("Incompatible len of points and weights")
-                return
-            points = [[point, weight] for point, weight in zip(points, weights)]
-        return self.buildTreeWithMedian(points)
-    
-    @classmethod
-    def buildTreeWithMedian(self, points, hyperplaneAxis = 0):
-        dim = len(points[0][0])
-        nxtHyperplaneAxis = (hyperplaneAxis + 1) % dim
-        if len(points) == 1:
-            return Node(points[0][0], hyperplaneAxis, 1, points[0][1] if len(points[0]) > 1 else 0, points[0][1] if len(points[0]) > 1 else 0, points[0][1] if len(points[0]) > 1 else 0)
+            if self.getDistacne(root.val, queryPoint) <= threshold and len(listOfNeighbors) < noOfPoints:
+                listOfNeighbors.append(root.val)
+            if root.left == None and root.right == None:
+                return listOfNeighbors
+            else:
+                T1, T2 = None, None
+                query = queryPoint[0] if root.axis == 0 else queryPoint[1]
+                currRoot = root.val[0] if root.axis == 0 else root.val[1]
 
-        medianIndex = len(points) // 2
-        sortedPoints = sorted(points, key=lambda x: x[0][hyperplaneAxis])
-
-        median = sortedPoints[medianIndex]
-        leftPoints = sortedPoints[:medianIndex]
-        rightPoints = sortedPoints[medianIndex + 1:]
-        sortedWeights = []
-
-        if (len(points[0]) > 1):
-            sortedWeights = sorted(points, key=lambda x: x[1])
-        currNode = Node(median[0], hyperplaneAxis, len(points), median[1] if len(median) > 1 else 0, sortedWeights[0][1] if (len(points[0]) > 1) else 0, sortedWeights[-1][1] if (len(points[0]) > 1 and len(sortedWeights) > 1) else 0)
-        currNode.left = self.buildTreeWithMedian(leftPoints, nxtHyperplaneAxis) if len(leftPoints) > 0 else []
-        currNode.right = self.buildTreeWithMedian(rightPoints, nxtHyperplaneAxis) if len(rightPoints) > 0 else []
-        return currNode
-    
-    @classmethod
-    def visualizeGraph(self, treeList):
-        dot = Digraph(comment='Tree')
-        for node in treeList:
-            dot.node(node)
-
-        for node, edges in treeList.items():
-            for edge in edges:
-                dot.edge(node, edge)
-
-        dot.render('tree', view=True)
+                if query < root.val[0] if root.axis == 0 else root.val[1]:
+                    T1 = root.left
+                    T2 = root.right
+                else:
+                    T1 = root.right
+                    T2 = root.left
+                leftList = self.nnKDTreeRec(queryPoint, T1, threshold, noOfPoints, listOfNeighbors)
+                if len(leftList) < noOfPoints and self.getDistacne(root.val, queryPoint) <= threshold:
+                    rightList = self.nnKDTreeRec(queryPoint, root.right, threshold, noOfPoints, listOfNeighbors)
+                else:
+                    rightList = self.nnKDTreeRec(queryPoint, root.right, threshold, noOfPoints, listOfNeighbors)
+        return listOfNeighbors
 
     @classmethod
     def checkRight(self, node : Node, bottom_left : list, top_right : list) -> bool:
@@ -169,11 +223,11 @@ class KDTree:
                         NoOfPoints += int(checkLeft(node,p1,p2)==True)
 
                     if type(node.left) == list: 
-                        Nl = ToNode(node.left)
+                        Nl = Node(node.left)
                     else: 
                         Nl = node.left
                     if type(node.right) == list: 
-                        Nr = ToNode(node.right)
+                        Nr = Node(node.right)
                     else: 
                         Nr = node.right
                     NoOfPoints += CountQueryPoints(Nl, p1, p2)
@@ -208,41 +262,15 @@ class KDTree:
             cur = cur.right
             node = stack.pop()
         return min(Max)
-
+    
     @classmethod
-    def nnKDTree(self, queryPoint, root, threshold, noOfPoints):
-        listOfNeighbors = []
-        return self.nnKDTreeRec(queryPoint, root, threshold, noOfPoints, listOfNeighbors)
+    def visualizeGraph(self, treeList):
+        dot = Digraph(comment='Tree')
+        for node in treeList:
+            dot.node(node)
 
-    @classmethod
-    def squareDistance(self, p1, p2):
-        retValue = abs((p1[0] - p2[0]) ^ 2 - (p1[1] - p2[1]) ^ 2)
-        print("p1: ", p1, "p2: ", p2, "print val: ", retValue)
-        return retValue
+        for node, edges in treeList.items():
+            for edge in edges:
+                dot.edge(node, edge)
 
-    @classmethod
-    def nnKDTreeRec(self, queryPoint, root, threshold, noOfPoints, listOfNeighbors):
-        if not root:
-            return listOfNeighbors
-        else:
-            if self.squareDistance(root.val, queryPoint) < threshold and len(listOfNeighbors) < noOfPoints:
-                listOfNeighbors.append(root.val)
-            if root.left == None and root.right == None:
-                return listOfNeighbors
-            else:
-                T1, T2 = None, None
-                query = queryPoint[0] if root.axis == 0 else queryPoint[1]
-                currRoot = root.val[0] if root.axis == 0 else root.val[1]
-
-                if query < root.val[0] if root.axis == 0 else root.val[1]:
-                    T1 = root.left
-                    T2 = root.right
-                else:
-                    T1 = root.right
-                    T2 = root.left
-                leftList = self.nnKDTreeRec(queryPoint, T1, threshold, noOfPoints, listOfNeighbors)
-                if len(leftList) < noOfPoints and self.squareDistance(root.val, queryPoint) < threshold:
-                    rightList = self.nnKDTreeRec(queryPoint, root.right, threshold, noOfPoints, listOfNeighbors)
-                else:
-                    rightList = self.nnKDTreeRec(queryPoint, root.right, threshold, noOfPoints, listOfNeighbors)
-        return listOfNeighbors
+        dot.render('tree', view=True)
