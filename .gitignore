@@ -13,3 +13,6 @@ htmlcov/
 
 # cache
 __pycache__/
+
+# PyPI stuffs
+dist/
