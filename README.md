@@ -31,7 +31,6 @@ kdtree.KDTree.nnKDTree((10, 20), kd_tree.root, 15, 3)
 ```
 Future work:
 Following weights related methods are to be added soon:
-1. nearestNeighbor
-2. Find points in a query rectangle with a weight threshold
-3. Point with minimum weight in a query rectangle
-4. Point with maximum weight in a query rectangle
+1. Find points in a query rectangle with a weight threshold
+2. Point with minimum weight in a query rectangle
+3. Point with maximum weight in a query rectangle
