@@ -10,5 +10,5 @@ setup(name='weighted_kdtree',
       author='Monisha Siddananda Sampaths',
       author_email='monisam97@gmail.com',
       url='https://github.com/moni97/kdtreePython',
-      version='0.1.1',
+      version='0.1.3',
       )

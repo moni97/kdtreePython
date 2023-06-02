@@ -129,8 +129,8 @@ class KDTree:
     def nnKDTree(self, queryPoint, root, threshold, noOfPoints):
         neighborsList = []
         heapq.heapify(neighborsList)
-        return self.nnKDTreeRec(queryPoint, root, threshold, noOfPoints, neighborsList)
-
+        neighbors = self.nnKDTreeRec(queryPoint, root, threshold, noOfPoints, neighborsList)
+        return [neighbor[1] for neighbor in neighbors]
     @classmethod
     def getDistance(self, p1, p2, metric="eucledian"):
         if metric == "eucledian":
@@ -154,9 +154,9 @@ class KDTree:
             if distance <= threshold:
                 # Remove the point with largest distance and insert the new point
                 if len(listOfNeighbors) >= noOfPoints:
-                    heapq.heappushpop(listOfNeighbors, (distance, root.val))
+                    heapq.heappushpop(listOfNeighbors, (-1 * distance, root.val))
                 else:
-                    heapq.heappush(listOfNeighbors, (distance, root.val))
+                    heapq.heappush(listOfNeighbors, (-1 * distance, root.val))
             
                     
             # If root is leaf, return the list
